@@ -1,0 +1,287 @@
+.dashboard {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto 1fr auto;
+  gap: 2rem;
+  padding: 2rem;
+  min-height: 100vh;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Header section */
+.dashboard-header {
+  grid-column: 1;
+  grid-row: 1;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.dashboard-header h1 {
+  margin: 0 0 0.5rem 0;
+  font-size: 2.5rem;
+}
+
+.dashboard-header h5 {
+  margin: 0;
+  color: #888;
+  font-weight: normal;
+}
+
+/* Top right buttons */
+.top-left-buttons {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.top-left-buttons button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.top-left-buttons button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.analyze_wallet {
+  background-color: #646cff;
+  color: white;
+}
+
+.report_scam {
+  background-color: #ff4444;
+  color: white;
+}
+
+/* Dash boxes */
+.dash-boxes {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+}
+
+.dash-boxes > div {
+  background: #1a1a1a;
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 1px solid #333;
+  text-align: center;
+}
+
+.dash-boxes h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.9rem;
+  color: #aaa;
+  font-weight: 500;
+}
+
+.dash-boxes h2 {
+  margin: 0;
+  font-size: 2rem;
+  color: #fff;
+}
+
+/* Quick Actions - left column */
+.quick-actions {
+  grid-column: 1;
+  background: #1a1a1a;
+  padding: 2rem;
+  border-radius: 12px;
+  border: 1px solid #333;
+}
+
+.quick-actions h2 {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.5rem;
+}
+
+.quick-actions > div {
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  background: #242424;
+  border-radius: 8px;
+  border: 1px solid #333;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.quick-actions > div:hover {
+  background: #2a2a2a;
+  transform: translateX(4px);
+}
+
+.quick-actions h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+}
+
+.quick-actions h6 {
+  margin: 0;
+  color: #888;
+  font-weight: normal;
+  font-size: 0.9rem;
+}
+
+/* Recent Reported Scams */
+.recent-reported-scams {
+  grid-column: 2;
+  background: #1a1a1a;
+  padding: 2rem;
+  border-radius: 12px;
+  border: 1px solid #333;
+}
+
+.recent-reported-scams h4 {
+  margin: 0 0 1rem 0;
+  font-size: 1.3rem;
+}
+
+.empty-state {
+  color: #666;
+  text-align: center;
+  padding: 1rem 0;
+  font-size: 0.9rem;
+}
+
+/* Dashboard scan list (compact) */
+.dash-scan-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dash-scan-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  background: #242424;
+  border-radius: 6px;
+  border: 1px solid #333;
+  font-size: 0.85rem;
+}
+
+.dash-scan-addr {
+  font-family: monospace;
+  color: #ddd;
+  min-width: 120px;
+}
+
+.dash-scan-badge {
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.badge-danger {
+  background: #ef4444;
+  color: #fff;
+}
+
+.badge-safe {
+  background: #22c55e;
+  color: #000;
+}
+
+.dash-scan-date {
+  color: #666;
+  font-size: 0.75rem;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+/* Footer */
+.footer {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 3rem 2rem;
+  background: linear-gradient(135deg, #646cff 0%, #535bf2 100%);
+  border-radius: 12px;
+  color: white;
+}
+
+.footer h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: 2rem;
+}
+
+.footer h6 {
+  margin: 0 0 2rem 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: normal;
+}
+
+.start-scanning {
+  padding: 1rem 2.5rem;
+  font-size: 1.1rem;
+  background: white;
+  color: #646cff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.start-scanning:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Responsive design */
+@media (max-width: 1024px) {
+  .dashboard {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    padding: 1.5rem;
+  }
+
+  .dashboard-header {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .top-left-buttons {
+    grid-column: 1;
+    grid-row: 2;
+    justify-content: flex-start;
+  }
+
+  .dash-boxes {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .quick-actions,
+  .recent-reported-scams {
+    grid-column: 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .dash-boxes {
+    grid-template-columns: 1fr;
+  }
+
+  .top-left-buttons {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .top-left-buttons button {
+    width: 100%;
+  }
+}

@@ -1,0 +1,287 @@
+.wallet-analyzer {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto 1fr auto;
+    gap: 2rem;
+    padding: 2rem;
+    min-height: 100vh;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+/* Top left title */
+.dashboard-header {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    text-align: left;
+    margin-bottom: 1rem;
+}
+
+.dashboard-header h1 {
+    margin: 0 0 0.5rem 0;
+    font-size: 2.5rem;
+}
+
+.dashboard-header h5 {
+    margin: 0;
+    color: #888;
+    font-weight: normal;
+}
+
+.top-left-title h1 {
+    margin: 0 0 0.5rem 0;
+    font-size: 2.5rem;
+}
+
+.top-left-title h5 {
+    margin: 0;
+    color: #888;
+    font-weight: normal;
+}
+
+/* Input wallet address */
+.address-checker{
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+    padding: 2rem;
+    background: #1a1a1a;
+    border-radius: 12px;
+    border: 1px solid #333;
+}
+
+.add-input,
+.blockchain-select,
+.analyze-button {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.add-input h6,
+.blockchain-select h6,
+.analyze-button h6 {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.9rem;
+    color: #aaa;
+    font-weight: 500;
+    text-align: left;
+}
+
+.add-input input,
+.blockchain-select select {
+    padding: 0.75rem 1rem;
+    border: 1px solid #333;
+    border-radius: 8px;
+    background: #242424;
+    color: #fff;
+    font-size: 1rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.add-input input:focus,
+.blockchain-select select:focus {
+    outline: none;
+    border-color: #646cff;
+}
+
+.blockchain-select select {
+    cursor: pointer;
+}
+
+.analyze-button button {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    background-color: #646cff;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    font-size: 1rem;
+    width: 100%;
+}
+
+.analyze-button button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(100, 108, 255, 0.3);
+}
+
+/* Analysis result */
+.analysis-result {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    padding: 1.5rem 2rem;
+    border-radius: 12px;
+    border: 1px solid #333;
+}
+
+.result-danger {
+    background: #2a1111;
+    border-color: #ef4444;
+}
+
+.result-safe {
+    background: #112a11;
+    border-color: #22c55e;
+}
+
+.result-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.result-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.result-badge {
+    padding: 0.3rem 1rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.result-danger .result-badge {
+    background: #ef4444;
+    color: #fff;
+}
+
+.result-safe .result-badge {
+    background: #22c55e;
+    color: #000;
+}
+
+.result-details {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.result-details > div {
+    flex: 1;
+    min-width: 120px;
+}
+
+.result-details h6 {
+    margin: 0 0 0.25rem 0;
+    color: #888;
+    font-weight: 500;
+    font-size: 0.8rem;
+}
+
+.result-details h4 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #fff;
+}
+
+.truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 200px;
+}
+
+/* Recent Checks */
+.recent-checks {
+    grid-column: 1 / -1;
+    grid-row: 4;
+    padding: 2rem;
+    background: #1a1a1a;
+    border-radius: 12px;
+    color: white;
+}
+
+.recent-checks h4 {
+    margin: 0 0 1rem 0;
+    font-size: 1.3rem;
+}
+
+.empty-state {
+    color: #666;
+    text-align: center;
+    padding: 2rem 0;
+}
+
+/* Scan list */
+.scan-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.scan-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    background: #242424;
+    border-radius: 8px;
+    border: 1px solid #333;
+    font-size: 0.9rem;
+}
+
+.scan-item.scan-suspicious {
+    border-left: 3px solid #ef4444;
+}
+
+.scan-item.scan-normal {
+    border-left: 3px solid #22c55e;
+}
+
+.scan-address {
+    font-family: monospace;
+    color: #ddd;
+    min-width: 140px;
+}
+
+.scan-chain {
+    color: #888;
+    min-width: 80px;
+    text-transform: capitalize;
+}
+
+.scan-score {
+    color: #fff;
+    font-weight: 600;
+    min-width: 50px;
+    text-align: right;
+}
+
+.scan-badge {
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    min-width: 80px;
+    text-align: center;
+}
+
+.badge-danger {
+    background: #ef4444;
+    color: #fff;
+}
+
+.badge-safe {
+    background: #22c55e;
+    color: #000;
+}
+
+.scan-date {
+    color: #666;
+    font-size: 0.8rem;
+    margin-left: auto;
+    white-space: nowrap;
+}
+
+.analyze-button button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}

@@ -1,0 +1,338 @@
+.deepfake-detector {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto auto auto;
+    gap: 2rem;
+    padding: 2rem;
+    min-height: 100vh;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Header */
+.deepfake-detector .dashboard-header {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    text-align: left;
+    margin-bottom: 1rem;
+}
+
+.deepfake-detector .dashboard-header h1 {
+    margin: 0 0 0.5rem 0;
+    font-size: 2.5rem;
+}
+
+.deepfake-detector .dashboard-header h5 {
+    margin: 0;
+    color: #888;
+    font-weight: normal;
+}
+
+/* Upload area */
+.upload-media {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    text-align: center;
+    padding: 3rem 2rem;
+    background: #1a1a1a;
+    border-radius: 12px;
+    border: 2px dashed #444;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.upload-media:hover {
+    border-color: #646cff;
+    background-color: #1e1e2e;
+}
+
+.upload-media.drag-active {
+    border-color: #646cff;
+    background-color: #1e1e3a;
+    box-shadow: 0 0 20px rgba(100, 108, 255, 0.2);
+}
+
+.upload-media.has-file {
+    cursor: default;
+    border-style: solid;
+    border-color: #333;
+}
+
+/* Upload prompt (no file) */
+.upload-prompt {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.upload-icon {
+    font-size: 3rem;
+    color: #646cff;
+    margin-bottom: 0.5rem;
+}
+
+.upload-prompt h2 {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+.upload-prompt h4 {
+    margin: 0;
+    color: #888;
+    font-weight: normal;
+    font-size: 0.9rem;
+}
+
+/* File preview (file selected) */
+.file-preview {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+}
+
+.preview-media img,
+.preview-media video {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: 8px;
+    border: 1px solid #333;
+}
+
+.preview-info {
+    text-align: center;
+}
+
+.file-name {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1rem;
+    color: #fff;
+    word-break: break-all;
+}
+
+.file-size {
+    margin: 0.25rem 0 0;
+    color: #888;
+    font-size: 0.85rem;
+}
+
+.preview-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.analyze-btn {
+    padding: 0.75rem 2rem;
+    border: none;
+    border-radius: 8px;
+    background-color: #646cff;
+    color: white;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+}
+
+.analyze-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(100, 108, 255, 0.3);
+}
+
+.analyze-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.clear-btn {
+    padding: 0.75rem 1.5rem;
+    border: 1px solid #555;
+    border-radius: 8px;
+    background: transparent;
+    color: #ccc;
+    font-weight: 500;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.clear-btn:hover:not(:disabled) {
+    background: #2a2a2a;
+    border-color: #888;
+}
+
+.clear-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Error banner */
+.error-banner {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    background: #3b1111;
+    border: 1px solid #ef4444;
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    color: #fca5a5;
+}
+
+.error-banner p {
+    margin: 0;
+}
+
+/* Result panel */
+.result-panel {
+    grid-column: 1 / -1;
+    grid-row: 4;
+    background: #1a1a1a;
+    border-radius: 12px;
+    border: 1px solid #333;
+    padding: 2rem;
+}
+
+.result-panel h3 {
+    margin: 0 0 1.5rem 0;
+    font-size: 1.4rem;
+    color: #fff;
+}
+
+.score-display {
+    display: flex;
+    align-items: center;
+    gap: 2.5rem;
+    flex-wrap: wrap;
+}
+
+.score-circle {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    border: 5px solid;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.score-value {
+    font-size: 2.2rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.score-subtitle {
+    font-size: 0.7rem;
+    color: #888;
+    margin-top: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.score-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.score-details p {
+    margin: 0;
+    color: #aaa;
+    font-size: 0.95rem;
+}
+
+.verdict {
+    font-size: 1.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.verdict-real {
+    color: #22c55e;
+}
+
+.verdict-fake {
+    color: #ef4444;
+}
+
+/* Per-frame scores bar chart */
+.frame-scores {
+    margin-top: 2rem;
+}
+
+.frame-scores h4 {
+    margin: 0 0 0.75rem 0;
+    font-size: 1rem;
+    color: #ccc;
+}
+
+.frame-bar-container {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 80px;
+    padding: 0.5rem;
+    background: #111;
+    border-radius: 6px;
+}
+
+.frame-bar {
+    flex: 1;
+    min-width: 3px;
+    border-radius: 2px 2px 0 0;
+    transition: height 0.3s ease;
+}
+
+/* Info boxes */
+.deepfake-detector .dash-boxes {
+    grid-column: 1 / -1;
+    grid-row: 5;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+}
+
+.deepfake-detector .dash-boxes > div {
+    background: #1a1a1a;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid #333;
+    text-align: center;
+}
+
+.deepfake-detector .dash-boxes h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.9rem;
+    color: #aaa;
+    font-weight: 500;
+}
+
+.deepfake-detector .dash-boxes h2 {
+    margin: 0;
+    font-size: 1.3rem;
+    color: #fff;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .deepfake-detector .dash-boxes {
+        grid-template-columns: 1fr;
+    }
+
+    .score-display {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+}
