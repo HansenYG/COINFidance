@@ -27,6 +27,19 @@ class CoinRequest(BaseModel):
     coin: str
     blockchain: str = "ethereum"
 
+class ScamReportRequest(BaseModel):
+    address: str
+    blockchain: str = "ethereum"
+    description: str = ""
+    amount_lost: float = 0.0
+    reporter: str | None = None
+
+class CommunityPostRequest(BaseModel):
+    title: str
+    body: str = ""
+    category: str = "discussions"
+    author: str | None = None
+
 # ── App setup ────────────────────────────────────────────────────────────────
 
 app = FastAPI()
@@ -339,6 +352,166 @@ def get_stats():
             "wallet_scans": 0,
             "coin_scans": 0,
             "high_risk_detected": 0,
+        }
+
+
+# ── Scam report endpoints ───────────────────────────────────────────────────
+
+@app.post("/scam-reports")
+def create_scam_report(req: ScamReportRequest):
+    try:
+        sb = get_supabase()
+        resp = sb.table("scam_reports").insert({
+            "address": req.address,
+            "blockchain": req.blockchain,
+            "description": req.description,
+            "amount_lost": req.amount_lost,
+            "status": "pending",
+            "reporter": req.reporter,
+        }).execute()
+        return {"ok": True, "data": resp.data}
+    except Exception as e:
+        print(f"[Supabase] Failed to create scam report: {e}")
+        raise HTTPException(status_code=500, detail="Failed to save report")
+
+
+@app.get("/scam-reports")
+def list_scam_reports(
+    status: str | None = None,
+    blockchain: str | None = None,
+    q: str | None = None,
+    limit: int = Query(default=20, le=100),
+):
+    """List recent scam reports, optionally filtered by status / chain / search."""
+    try:
+        sb = get_supabase()
+        query = sb.table("scam_reports").select("*").order("reported_at", desc=True)
+        if status and status != "all_s":
+            query = query.eq("status", status)
+        if blockchain and blockchain != "all_t":
+            query = query.eq("blockchain", blockchain)
+        if q:
+            query = query.or_(f"address.ilike.%{q}%,description.ilike.%{q}%")
+        resp = query.limit(limit).execute()
+        return resp.data
+    except Exception as e:
+        print(f"[Supabase] Failed to fetch scam reports: {e}")
+        return []
+
+
+@app.get("/scam-reports/stats")
+def scam_report_stats():
+    try:
+        sb = get_supabase()
+        total = sb.table("scam_reports").select("*", count="exact").execute()
+        verified = (
+            sb.table("scam_reports")
+            .select("*", count="exact")
+            .eq("status", "verified")
+            .execute()
+        )
+        under_review = (
+            sb.table("scam_reports")
+            .select("*", count="exact")
+            .eq("status", "under_review")
+            .execute()
+        )
+        # sum of amount_lost (fetch only that column to keep payload small)
+        amounts_resp = sb.table("scam_reports").select("amount_lost").execute()
+        total_lost = sum(float(r.get("amount_lost") or 0) for r in (amounts_resp.data or []))
+        return {
+            "total_reports": total.count or 0,
+            "verified": verified.count or 0,
+            "under_review": under_review.count or 0,
+            "total_lost": total_lost,
+        }
+    except Exception as e:
+        print(f"[Supabase] Failed to fetch scam report stats: {e}")
+        return {
+            "total_reports": 0,
+            "verified": 0,
+            "under_review": 0,
+            "total_lost": 0,
+        }
+
+
+# ── Community hub endpoints ─────────────────────────────────────────────────
+
+@app.post("/community-posts")
+def create_community_post(req: CommunityPostRequest):
+    try:
+        sb = get_supabase()
+        resp = sb.table("community_posts").insert({
+            "title": req.title,
+            "body": req.body,
+            "category": req.category,
+            "author": req.author,
+        }).execute()
+        return {"ok": True, "data": resp.data}
+    except Exception as e:
+        print(f"[Supabase] Failed to create community post: {e}")
+        raise HTTPException(status_code=500, detail="Failed to save post")
+
+
+@app.get("/community-posts")
+def list_community_posts(
+    category: str | None = None,
+    q: str | None = None,
+    limit: int = Query(default=20, le=100),
+):
+    try:
+        sb = get_supabase()
+        query = sb.table("community_posts").select("*").order("created_at", desc=True)
+        if category and category != "all_c":
+            query = query.eq("category", category)
+        if q:
+            query = query.or_(f"title.ilike.%{q}%,body.ilike.%{q}%")
+        resp = query.limit(limit).execute()
+        return resp.data
+    except Exception as e:
+        print(f"[Supabase] Failed to fetch community posts: {e}")
+        return []
+
+
+@app.get("/community-posts/stats")
+def community_post_stats():
+    try:
+        sb = get_supabase()
+        total = sb.table("community_posts").select("*", count="exact").execute()
+        scam_alerts = (
+            sb.table("community_posts")
+            .select("*", count="exact")
+            .eq("category", "scam_alerts")
+            .execute()
+        )
+        tips = (
+            sb.table("community_posts")
+            .select("*", count="exact")
+            .eq("category", "tips")
+            .execute()
+        )
+        # active today: posts created in last 24h
+        from datetime import timedelta
+        since = (datetime.utcnow() - timedelta(hours=24)).isoformat()
+        active = (
+            sb.table("community_posts")
+            .select("*", count="exact")
+            .gte("created_at", since)
+            .execute()
+        )
+        return {
+            "total_posts": total.count or 0,
+            "active_today": active.count or 0,
+            "scam_alerts": scam_alerts.count or 0,
+            "com_tips": tips.count or 0,
+        }
+    except Exception as e:
+        print(f"[Supabase] Failed to fetch community stats: {e}")
+        return {
+            "total_posts": 0,
+            "active_today": 0,
+            "scam_alerts": 0,
+            "com_tips": 0,
         }
 
 

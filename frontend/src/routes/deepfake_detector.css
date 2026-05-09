@@ -47,14 +47,14 @@
 }
 
 .upload-media:hover {
-    border-color: #646cff;
+    border-color: #FFD700;
     background-color: #1e1e2e;
 }
 
 .upload-media.drag-active {
-    border-color: #646cff;
+    border-color: #FFD700;
     background-color: #1e1e3a;
-    box-shadow: 0 0 20px rgba(100, 108, 255, 0.2);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
 }
 
 .upload-media.has-file {
@@ -73,7 +73,7 @@
 
 .upload-icon {
     font-size: 3rem;
-    color: #646cff;
+    color: #FFD700;
     margin-bottom: 0.5rem;
 }
 
@@ -135,8 +135,8 @@
     padding: 0.75rem 2rem;
     border: none;
     border-radius: 8px;
-    background-color: #646cff;
-    color: white;
+    background-color: #FFD700;
+    color: #1a1a1a;
     font-weight: 600;
     font-size: 1rem;
     cursor: pointer;
@@ -145,7 +145,7 @@
 
 .analyze-btn:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(100, 108, 255, 0.3);
+    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
 }
 
 .analyze-btn:disabled {

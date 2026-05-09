@@ -139,7 +139,7 @@
 .status-select select:focus,
 .blockchain-select select:focus {
     outline: none;
-    border-color: #646cff;
+    border-color: #FFD700;
 }
 
 .status-select select,
@@ -151,8 +151,8 @@
     padding: 0.75rem 1.5rem;
     border: none;
     border-radius: 8px;
-    background-color: #646cff;
-    color: white;
+    background-color: #FFD700;
+    color: #1a1a1a;
     font-weight: 600;
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
@@ -162,7 +162,7 @@
 
 .search-button button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(100, 108, 255, 0.3);
+    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
 }
 
 /* Footer */
@@ -180,4 +180,100 @@
     margin: 0;
     font-size: 1.5rem;
 }
+
+/* Report submission form */
+.scam-form {
+    grid-column: 1 / -1;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 1rem;
+}
+.scam-form textarea {
+    grid-column: 1 / -1;
+    min-height: 80px;
+    resize: vertical;
+}
+.scam-form input,
+.scam-form select,
+.scam-form textarea {
+    background: #242424;
+    border: 1px solid #333;
+    color: #fff;
+    padding: 0.75rem;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.95rem;
+}
+.scam-form input:focus,
+.scam-form select:focus,
+.scam-form textarea:focus {
+    outline: none;
+    border-color: #FFD700;
+}
+.scam-form button {
+    grid-column: 1 / -1;
+    background-color: #FFD700;
+    color: #1a1a1a;
+    font-weight: 600;
+    border: none;
+    padding: 0.85rem 1.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.scam-form button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+}
+
+/* Report list */
+.report-list {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+.report-card {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 10px;
+    padding: 1.25rem 1.5rem;
+}
+.report-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+.report-addr {
+    font-family: monospace;
+    color: #FFD700;
+    word-break: break-all;
+}
+.report-meta {
+    margin-top: 0.5rem;
+    color: #888;
+    font-size: 0.85rem;
+}
+.report-desc {
+    margin: 0.75rem 0 0 0;
+    color: #ccc;
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+.report-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+.badge-pending      { background: #444; color: #FFD700; }
+.badge-under_review { background: #FFC107; color: #1a1a1a; }
+.badge-verified     { background: #22c55e; color: #000; }
+.badge-rejected     { background: #ef4444; color: #fff; }
 

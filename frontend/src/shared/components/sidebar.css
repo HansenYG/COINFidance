@@ -15,11 +15,12 @@
 .sidebar h3 {
   margin: 0;
   padding: 1rem;
-  color: #fff;
+  color: #FFD700;
   font-size: 1.5rem;
-  font-weight: 600;
+  font-weight: 700;
   border-bottom: 1px solid #333;
   margin-bottom: 1rem;
+  letter-spacing: 0.5px;
 }
 
 .sidebar-item {
@@ -45,10 +46,11 @@
 
 /* Active state for current page */
 .sidebar-item.active {
-  background-color: #646cff;
+  background-color: #FFD700;
 }
 
 .sidebar-item.active h3 {
-  color: #fff;
+  color: #1a1a1a;
+  font-weight: 600;
 }
 
