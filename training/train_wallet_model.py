@@ -37,9 +37,9 @@ HIDDEN_DIM = 128
 GRU_HIDDEN = 64
 SEQ_LENGTH = 20
 
-NUM_SAMPLES = 6000
+NUM_SAMPLES = 10000
 BATCH_SIZE = 64
-EPOCHS = 25
+EPOCHS = 30
 LR = 1e-3
 VAL_SPLIT = 0.2
 SEED = 42
@@ -78,7 +78,13 @@ def _build_suspicious_sequence():
 
 def _static_from_seq(seq, label):
     """Compute static features mirroring backend/app.py extraction."""
-    num_txs = SEQ_LENGTH
+    # Vary num_txs across samples so the column has non-zero variance.
+    # Normal wallets typically have many more transactions than fresh
+    # scammer wallets, but cover a broad range to match real data.
+    if label == 0:
+        num_txs = int(np.random.randint(40, 200))
+    else:
+        num_txs = int(np.random.randint(SEQ_LENGTH, 80))
     values = seq[:, 0]
     gas_prices = seq[:, 1]
     is_error = seq[:, 3]
@@ -87,13 +93,16 @@ def _static_from_seq(seq, label):
     total_value = float(values.sum())
     avg_value = float(values.mean())
     failed_txs = int(is_error.sum())
-    fail_ratio = failed_txs / num_txs
+    fail_ratio = failed_txs / max(num_txs, 1)
 
-    # Unique receivers: normal wallets ~ many; suspicious ~ few
+    # Unique receivers: normal wallets ~ many; suspicious ~ heavily concentrated
+    # (real phishing wallets often funnel everything to 1-3 destinations).
     if label == 0:
-        unique_receivers = int(np.random.randint(int(num_txs * 0.6), num_txs + 1))
+        # Diverse counterparty graph
+        unique_receivers = int(np.random.randint(max(8, int(num_txs * 0.3)), num_txs + 1))
     else:
-        unique_receivers = int(np.random.randint(1, max(2, int(num_txs * 0.3))))
+        # Funnel pattern – almost always 1-2 receivers
+        unique_receivers = int(np.random.choice([1, 1, 1, 2, 2, 3]))
 
     avg_gas = float(gas_prices.mean())
     std_gas = float(gas_prices.std())
@@ -132,7 +141,9 @@ def generate_wallet_dataset(n_samples: int):
     labels = np.array(labels, dtype=np.int64)
 
     # Per-feature normalization (log-scale heavy-tailed columns)
-    log_static_cols = [1, 2, 6, 7, 8, 9]
+    # Cols: 0 num_txs, 1 total_value, 2 avg_value, 3 failed_txs, 4 fail_ratio,
+    #       5 unique_receivers, 6 avg_gas, 7 std_gas, 8 avg_dt, 9 min_dt
+    log_static_cols = [0, 1, 2, 3, 5, 6, 7, 8, 9]
     statics[:, log_static_cols] = np.log1p(np.maximum(statics[:, log_static_cols], 0))
     s_mean = statics.mean(axis=0, keepdims=True)
     s_std = statics.std(axis=0, keepdims=True) + 1e-6
@@ -145,10 +156,25 @@ def generate_wallet_dataset(n_samples: int):
     q_std = seq_flat.std(axis=0, keepdims=True) + 1e-6
     seqs = (seqs - q_mean) / q_std
 
+    # Persist normalization constants so the FastAPI inference path applies the
+    # exact same preprocessing as training.
+    norm_path = os.path.join(project_root, "backend/saved_models/wallet_norm.npz")
+    os.makedirs(os.path.dirname(norm_path), exist_ok=True)
+    np.savez(
+        norm_path,
+        log_static_cols=np.array(log_static_cols),
+        static_mean=s_mean.astype(np.float32),
+        static_std=s_std.astype(np.float32),
+        log_seq_cols=np.array(log_seq_cols),
+        seq_mean=q_mean.astype(np.float32),
+        seq_std=q_std.astype(np.float32),
+    )
+    print(f"Saved normalization stats to {norm_path}")
+
     # Gaussian overlap noise after normalization, so populations aren't
     # trivially separable and the model has to learn real signal.
-    statics += np.random.normal(0, 0.5, statics.shape).astype(np.float32)
-    seqs += np.random.normal(0, 0.5, seqs.shape).astype(np.float32)
+    statics += np.random.normal(0, 0.3, statics.shape).astype(np.float32)
+    seqs += np.random.normal(0, 0.3, seqs.shape).astype(np.float32)
 
     # Flip 5% of labels to simulate real-world label noise.
     flip_mask = np.random.rand(len(labels)) < 0.05
