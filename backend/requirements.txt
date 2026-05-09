@@ -1,3 +1,8 @@
+# Allow pip to fall back to the PyTorch CPU wheel index alongside PyPI.
+# This pulls a ~190 MB CPU-only torch instead of the 700 MB CUDA build,
+# which fits Render's free-tier disk + memory.
+--extra-index-url https://download.pytorch.org/whl/cpu
+
 fastapi==0.115.0
 uvicorn[standard]==0.30.6
 pydantic==2.9.2
@@ -5,6 +10,5 @@ python-dotenv==1.0.1
 requests==2.32.3
 supabase==2.28.0
 numpy==2.1.2
-# CPU-only PyTorch -- ~190 MB instead of the 700 MB CUDA build.
-torch==2.4.1 --index-url https://download.pytorch.org/whl/cpu
+torch==2.4.1
 python-multipart==0.0.12
