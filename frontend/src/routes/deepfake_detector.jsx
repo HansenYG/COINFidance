@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { API_BASE } from '../shared/api/config';
 import './deepfake_detector.css';
 
 function DeepfakeDetector() {
@@ -70,7 +71,7 @@ function DeepfakeDetector() {
             const formData = new FormData();
             formData.append('file', file);
 
-            const response = await fetch('http://127.0.0.1:8000/detect-deepfake', {
+            const response = await fetch(`${API_BASE}/detect-deepfake`, {
                 method: 'POST',
                 body: formData,
             });

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE } from '../shared/api/config';
 import { useNavigate } from 'react-router-dom';
 import './dashboard.css';
 
@@ -20,7 +21,7 @@ function Dashboard() {
 
     async function fetchStats() {
         try {
-            const res = await fetch("http://127.0.0.1:8000/stats");
+            const res = await fetch(`${API_BASE}/stats`);
             const data = await res.json();
             setStats(data);
         } catch (err) {
@@ -30,7 +31,7 @@ function Dashboard() {
 
     async function fetchRecentWallets() {
         try {
-            const res = await fetch("http://127.0.0.1:8000/recent-wallet-scans?limit=5");
+            const res = await fetch(`${API_BASE}/recent-wallet-scans?limit=5`);
             const data = await res.json();
             setRecentWallets(data);
         } catch (err) {

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { API_BASE } from '../shared/api/config';
 import './scam_report.css';
 
-const API_BASE = "http://127.0.0.1:8000";
 
 function ScamReport() {
     const [stats, setStats] = useState({

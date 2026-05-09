@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE } from '../shared/api/config';
 import './wallet_analyzer.css';
 
 function WalletAnalyzer() {
@@ -14,7 +15,7 @@ function WalletAnalyzer() {
 
     async function fetchRecent() {
         try {
-            const res = await fetch("http://127.0.0.1:8000/recent-wallet-scans?limit=10");
+            const res = await fetch(`${API_BASE}/recent-wallet-scans?limit=10`);
             const data = await res.json();
             setRecentScans(data);
         } catch (err) {
@@ -30,7 +31,7 @@ function WalletAnalyzer() {
         setLoading(true);
         setResult(null);
         try {
-            const response = await fetch("http://127.0.0.1:8000/analyze-wallet", {
+            const response = await fetch(`${API_BASE}/analyze-wallet`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ address: address, blockchain: blockchain }),

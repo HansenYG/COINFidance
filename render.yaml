@@ -1,0 +1,24 @@
+# Render Blueprint for the COINFidance FastAPI backend.
+# Push this file to GitHub, then in Render: New → Blueprint → pick this repo.
+services:
+  - type: web
+    name: coinfidance-api
+    runtime: python
+    rootDir: backend
+    region: oregon            # change to a region close to your users
+    plan: free                # 512 MB RAM, sleeps after 15 min idle on free tier
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: MY_KEY
+        sync: false           # set in dashboard (Etherscan key)
+      - key: SUPABASE_URL
+        sync: false           # set in dashboard
+      - key: SUPABASE_KEY
+        sync: false           # set in dashboard (service_role)
+      - key: FRONTEND_ORIGIN
+        sync: false           # e.g. https://coinfidance.vercel.app

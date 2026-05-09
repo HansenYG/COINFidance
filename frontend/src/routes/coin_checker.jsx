@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE } from '../shared/api/config';
 import './coin_checker.css';
 
 function CoinChecker() {
@@ -14,7 +15,7 @@ function CoinChecker() {
 
     async function fetchRecent() {
         try {
-            const res = await fetch("http://127.0.0.1:8000/recent-coin-scans?limit=10");
+            const res = await fetch(`${API_BASE}/recent-coin-scans?limit=10`);
             const data = await res.json();
             setRecentScans(data);
         } catch (err) {
@@ -30,7 +31,7 @@ function CoinChecker() {
         setLoading(true);
         setResult(null);
         try {
-            const response = await fetch("http://127.0.0.1:8000/analyze-coin", {
+            const response = await fetch(`${API_BASE}/analyze-coin`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ coin: coin, blockchain: blockchain }),
