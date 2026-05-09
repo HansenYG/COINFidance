@@ -55,7 +55,11 @@ class CommunityPostRequest(BaseModel):
 
 # ── App setup ────────────────────────────────────────────────────────────────
 
-app = FastAPI()
+app = FastAPI(
+    title="COINFidance API",
+    description="Wallet analyzer, coin checker, scam reports, community hub & deepfake detection.",
+    version="1.0.0",
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -64,6 +68,87 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# ── Root + health ───────────────────────────────────────────────────────────
+
+@app.get("/")
+def root():
+    """Friendly landing JSON so visiting the API root isn't a 404."""
+    return {
+        "service": "COINFidance API",
+        "version": "1.0.0",
+        "status": "ok",
+        "docs": "/docs",
+        "health": "/health",
+        "endpoints": {
+            "wallet": ["POST /analyze-wallet", "GET /recent-wallet-scans"],
+            "coin": ["POST /analyze-coin", "GET /recent-coin-scans"],
+            "scam_reports": [
+                "POST /scam-reports",
+                "GET /scam-reports",
+                "GET /scam-reports/stats",
+            ],
+            "community": [
+                "POST /community-posts",
+                "GET /community-posts",
+                "GET /community-posts/stats",
+            ],
+            "stats": "GET /stats",
+            "deepfake": "POST /detect-deepfake",
+        },
+        "frontend": "http://localhost:5173",
+    }
+
+
+@app.get("/health")
+def health():
+    """Liveness + readiness check. Pings Supabase + Etherscan."""
+    status = {
+        "ok": True,
+        "models_loaded": {
+            "wallet": True,
+            "coin": True,
+            "deepfake": deepfake_model is not None,
+        },
+        "supabase": {"ok": False, "error": None},
+        "etherscan": {"ok": False, "error": None},
+    }
+
+    # Supabase ping: cheap count query against wallet_scans.
+    try:
+        sb = get_supabase()
+        sb.table("wallet_scans").select("id", count="exact").limit(1).execute()
+        status["supabase"]["ok"] = True
+    except Exception as e:
+        status["supabase"]["error"] = f"{type(e).__name__}: {e}"
+        status["ok"] = False
+
+    # Etherscan ping: cheap V2 ethsupply call (no address required).
+    try:
+        if not ETHERSCAN_API_KEY:
+            raise RuntimeError("ETHERSCAN API key (env MY_KEY) not set")
+        r = requests.get(
+            "https://api.etherscan.io/v2/api",
+            params={
+                "chainid": 1,
+                "module": "stats",
+                "action": "ethsupply",
+                "apikey": ETHERSCAN_API_KEY,
+            },
+            timeout=8,
+        )
+        data = r.json()
+        if data.get("status") == "1":
+            status["etherscan"]["ok"] = True
+        else:
+            status["etherscan"]["error"] = data.get("message") or str(data)
+            status["ok"] = False
+    except Exception as e:
+        status["etherscan"]["error"] = f"{type(e).__name__}: {e}"
+        status["ok"] = False
+
+    return status
 
 # ── Load wallet model ────────────────────────────────────────────────────────
 
