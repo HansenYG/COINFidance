@@ -163,6 +163,7 @@ function DeepfakeDetector() {
     const resultPanel = result && (
         <div className="result-panel">
             <h3>Analysis Results</h3>
+            {result.error && <div className="error-banner"><p>{result.error}</p></div>}
             <div className="score-display">
                 <div className="score-circle" style={{ borderColor: getScoreColor(result.fake_score) }}>
                     <span className="score-value" style={{ color: getScoreColor(result.fake_score) }}>
@@ -175,7 +176,10 @@ function DeepfakeDetector() {
                         {result.label}
                     </div>
                     <p>Frames analysed: <strong>{result.frame_count}</strong></p>
-                    <p>Confidence: <strong>{Math.round(result.fake_score > 0.5 ? result.fake_score * 100 : (1 - result.fake_score) * 100)}%</strong></p>
+                    <p>Confidence: <strong>{Math.round(((result.average_confidence ?? (result.fake_score > 0.5 ? result.fake_score : 1 - result.fake_score))) * 100)}%</strong></p>
+                    {result.fake_frames_detected && (
+                        <p>Fake frames: <strong>{result.fake_frames_detected}</strong></p>
+                    )}
                 </div>
             </div>
             {result.per_frame && result.per_frame.length > 1 && (
