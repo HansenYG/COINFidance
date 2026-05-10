@@ -13,7 +13,9 @@ numpy>=2.1,<3.0
 torch==2.4.1
 python-multipart==0.0.12
 
-# Deepfake detection (ViT via HuggingFace)
-transformers>=4.44,<5.0
+# Deepfake detection — quantized ONNX ViT, runs on CPU via onnxruntime.
+# Designed to fit Render's 512 MB free tier (vs torch+transformers which
+# OOMs). Model file is auto-downloaded on first startup (~89 MB).
+onnxruntime>=1.18,<2.0
 opencv-python-headless>=4.10,<5.0
 Pillow>=10.4,<12.0

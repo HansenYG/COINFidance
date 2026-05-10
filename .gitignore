@@ -18,3 +18,10 @@ __pycache__/
 # Environment files
 .env
 .env.local
+
+# Logs
+*.log
+
+# Downloaded model artifacts (auto-fetched at runtime — too big for git)
+backend/saved_models/deepfake_vit_quantized.onnx
+*.onnx

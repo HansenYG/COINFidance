@@ -1,71 +1,159 @@
 """
-Deepfake Detection Engine — ViT (Vision Transformer) edition.
+Deepfake Detection Engine — ONNX Runtime edition.
 
-Uses the pre-trained `Sxhni/deepfake-detector-vit` model from HuggingFace
-to score images and videos for deepfake manipulation. No local training
-data or .h5 weights are required; weights are downloaded on first run
-and cached under ~/.cache/huggingface.
+Uses a quantized ONNX ViT model from HuggingFace, run locally with the very
+lightweight `onnxruntime` package. Designed to fit Render's 512 MB free tier:
+
+  - Model file:        ~89 MB on disk (INT8-quantized ViT base/32).
+  - onnxruntime CPU:   ~25-40 MB resident.
+  - Inference RAM:     ~60-100 MB peak per request (224x224x3 input).
+
+Total stays well under torch+transformers (~600 MB) which OOMs on free tier.
 
 Public API (kept compatible with backend/app.py):
   - load_model() -> object         # the detector instance
   - predict_media(model, path)     # dict result with label/fake_score/per_frame
+
+Required env vars: none. The model is downloaded on first startup from the
+HuggingFace public repo (no auth needed). Set DEEPFAKE_MODEL_PATH to a local
+file to skip the download (useful in CI / offline tests).
 """
 
 from __future__ import annotations
 
+import io
 import os
+import urllib.request
 from typing import List
 
 import cv2
 import numpy as np
-import torch
+import onnxruntime as ort
 from PIL import Image
-from transformers import ViTImageProcessor, ViTForImageClassification
 
 
 # ── Config ─────────────────────────────────────────────────────────────────
-MODEL_NAME = os.getenv("DEEPFAKE_MODEL_NAME", "Sxhni/deepfake-detector-vit")
-# How many frames to sample from a video for majority-vote scoring.
-# Higher -> more accurate but slower.
-DEFAULT_VIDEO_FRAMES = int(os.getenv("DEEPFAKE_VIDEO_FRAMES", "15"))
+# Quantized ViT (~89 MB). Other variants in the same repo if you want
+# different size/accuracy tradeoffs (model_q4.onnx ~63 MB, model.onnx ~350 MB).
+DEFAULT_MODEL_URL = os.getenv(
+    "DEEPFAKE_MODEL_URL",
+    "https://huggingface.co/prithivMLmods/Deepfake-Detection-Exp-02-22-ONNX"
+    "/resolve/main/onnx/model_quantized.onnx",
+)
+# Where to cache the downloaded model. Render's filesystem is ephemeral but
+# persists for the life of the running container, so re-downloads only happen
+# on cold starts.
+DEFAULT_MODEL_DIR = os.getenv(
+    "DEEPFAKE_MODEL_DIR",
+    os.path.join(os.path.dirname(os.path.dirname(__file__)), "saved_models"),
+)
+DEFAULT_MODEL_FILENAME = "deepfake_vit_quantized.onnx"
+
+# id2label from the model config: 0 = Deepfake, 1 = Real.
+LABEL_FAKE_INDEX = 0
+
+# Frames sampled per video. Each frame is a separate ONNX forward pass.
+DEFAULT_VIDEO_FRAMES = 15
+HTTP_TIMEOUT = int(os.getenv("DEEPFAKE_HTTP_TIMEOUT", "120"))
 
 IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tiff"}
 VIDEO_EXTS = {".mp4", ".avi", ".mov", ".mkv", ".wmv", ".flv", ".webm"}
 
+# ViT preprocessing constants (from preprocessor_config.json).
+_IMAGE_SIZE = 224
+_IMAGE_MEAN = np.array([0.5, 0.5, 0.5], dtype=np.float32).reshape(1, 3, 1, 1)
+_IMAGE_STD = np.array([0.5, 0.5, 0.5], dtype=np.float32).reshape(1, 3, 1, 1)
+
+
+# ── Helpers ────────────────────────────────────────────────────────────────
+def _ensure_model_file(model_dir: str, filename: str, url: str) -> str:
+    """Download the ONNX model if it's not already cached locally."""
+    path = os.environ.get("DEEPFAKE_MODEL_PATH")
+    if path:
+        if not os.path.exists(path):
+            raise RuntimeError(f"DEEPFAKE_MODEL_PATH points to missing file: {path}")
+        return path
+
+    os.makedirs(model_dir, exist_ok=True)
+    target = os.path.join(model_dir, filename)
+    if os.path.exists(target) and os.path.getsize(target) > 1_000_000:
+        return target
+
+    print(f"[Deepfake] Downloading ONNX model from {url} -> {target}")
+    # Stream to a temp file then rename, so a partial download doesn't get
+    # cached as a valid model.
+    tmp = target + ".part"
+    try:
+        with urllib.request.urlopen(url, timeout=HTTP_TIMEOUT) as resp, open(tmp, "wb") as f:
+            while True:
+                chunk = resp.read(1024 * 256)
+                if not chunk:
+                    break
+                f.write(chunk)
+        os.replace(tmp, target)
+    except Exception:
+        if os.path.exists(tmp):
+            try:
+                os.remove(tmp)
+            except OSError:
+                pass
+        raise
+    print(f"[Deepfake] Cached model ({os.path.getsize(target):,} bytes)")
+    return target
+
+
+def _preprocess(image: Image.Image) -> np.ndarray:
+    """Resize to 224x224, RGB, scale to [0,1], normalize, NCHW float32."""
+    if image.mode != "RGB":
+        image = image.convert("RGB")
+    # PIL.Image.BILINEAR == 2, matches preprocessor_config "resample": 2.
+    image = image.resize((_IMAGE_SIZE, _IMAGE_SIZE), Image.BILINEAR)
+    arr = np.asarray(image, dtype=np.float32) / 255.0      # HWC, [0,1]
+    arr = arr.transpose(2, 0, 1)[None, ...]                # 1xCxHxW
+    arr = (arr - _IMAGE_MEAN) / _IMAGE_STD
+    return arr.astype(np.float32, copy=False)
+
+
+def _softmax(x: np.ndarray) -> np.ndarray:
+    e = np.exp(x - np.max(x, axis=-1, keepdims=True))
+    return e / np.sum(e, axis=-1, keepdims=True)
+
 
 # ── Detector ───────────────────────────────────────────────────────────────
-class UnifiedDeepfakeDetector:
-    """Wraps a pre-trained ViT classifier for image & video deepfake scoring."""
+class ONNXDeepfakeDetector:
+    """Lightweight ONNX-based deepfake classifier (CPU, INT8 quantized ViT)."""
 
-    def __init__(self, model_name: str = MODEL_NAME):
-        self.model_name = model_name
-        self.processor = ViTImageProcessor.from_pretrained(model_name)
-        self.model = ViTForImageClassification.from_pretrained(model_name)
+    def __init__(
+        self,
+        model_path: str | None = None,
+        model_url: str = DEFAULT_MODEL_URL,
+        model_dir: str = DEFAULT_MODEL_DIR,
+        model_filename: str = DEFAULT_MODEL_FILENAME,
+    ):
+        if model_path is None:
+            model_path = _ensure_model_file(model_dir, model_filename, model_url)
 
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model.to(self.device)
-        self.model.eval()
+        # Single-thread CPU keeps RAM low and avoids contention with other
+        # endpoints on the same Render dyno.
+        sess_opts = ort.SessionOptions()
+        sess_opts.intra_op_num_threads = 1
+        sess_opts.inter_op_num_threads = 1
+        sess_opts.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
 
-        # Figure out which class index corresponds to "fake".
-        # The model's id2label mapping varies (e.g. {"0": "Real", "1": "Fake"}
-        # or {"0": "REAL", "1": "FAKE"}), so resolve it once up-front.
-        self._fake_idx = self._resolve_fake_idx()
+        self.session = ort.InferenceSession(
+            model_path,
+            sess_options=sess_opts,
+            providers=["CPUExecutionProvider"],
+        )
+        self.input_name = self.session.get_inputs()[0].name
+        self.output_name = self.session.get_outputs()[0].name
 
-    def _resolve_fake_idx(self) -> int:
-        id2label = getattr(self.model.config, "id2label", {}) or {}
-        for idx, label in id2label.items():
-            if "fake" in str(label).lower():
-                return int(idx)
-        # Fallback: assume binary classifier with index 1 == fake.
-        return 1
-
-    @torch.no_grad()
     def _score_pil(self, image: Image.Image) -> float:
-        """Return P(fake) in [0,1] for a single PIL image."""
-        inputs = self.processor(images=image, return_tensors="pt").to(self.device)
-        outputs = self.model(**inputs)
-        probs = torch.nn.functional.softmax(outputs.logits, dim=-1)[0]
-        return float(probs[self._fake_idx].item())
+        """Return P(fake) in [0, 1] for a single PIL image."""
+        x = _preprocess(image)
+        logits = self.session.run([self.output_name], {self.input_name: x})[0]
+        probs = _softmax(logits)[0]
+        return float(probs[LABEL_FAKE_INDEX])
 
     def predict_image(self, image: Image.Image) -> dict:
         score = self._score_pil(image)
@@ -77,7 +165,10 @@ class UnifiedDeepfakeDetector:
             "average_confidence": round(score if score > 0.5 else 1.0 - score, 4),
         }
 
-    def predict_video(self, video_path: str, num_frames: int = DEFAULT_VIDEO_FRAMES) -> dict:
+    def predict_video(self, video_path: str, num_frames: int | None = None) -> dict:
+        if num_frames is None:
+            num_frames = int(os.getenv("DEEPFAKE_VIDEO_FRAMES", str(DEFAULT_VIDEO_FRAMES)))
+
         cap = cv2.VideoCapture(video_path)
         if not cap.isOpened():
             return {
@@ -128,7 +219,6 @@ class UnifiedDeepfakeDetector:
 
         avg_score = float(np.mean(per_frame))
         is_fake = avg_score > 0.5
-        # Confidence = how strongly the average leans toward its decision.
         confidence = avg_score if is_fake else 1.0 - avg_score
         fake_frames = int(sum(1 for s in per_frame if s > 0.5))
 
@@ -143,12 +233,12 @@ class UnifiedDeepfakeDetector:
 
 
 # ── Backwards-compatible module-level API expected by app.py ───────────────
-def load_model() -> UnifiedDeepfakeDetector:
-    """Instantiate (and warm) the detector. Heavy: downloads weights on first call."""
-    return UnifiedDeepfakeDetector()
+def load_model() -> ONNXDeepfakeDetector:
+    """Instantiate the ONNX detector (downloads model on first call)."""
+    return ONNXDeepfakeDetector()
 
 
-def predict_media(model: UnifiedDeepfakeDetector, file_path: str) -> dict:
+def predict_media(model: ONNXDeepfakeDetector, file_path: str) -> dict:
     """Route an uploaded file to image- or video-prediction based on its extension."""
     ext = os.path.splitext(file_path)[1].lower()
 

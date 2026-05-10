@@ -1,5 +1,10 @@
-import torch
 import os
+from dotenv import load_dotenv
+
+# Load .env BEFORE importing modules that might read env vars at import time.
+load_dotenv()
+
+import torch
 import tempfile
 import shutil
 import requests
@@ -11,10 +16,10 @@ from pydantic import BaseModel
 from models.wallet_analyze_model import WalletClassifier
 from models.coin_analyze_model import ScamCoinClassifier
 from db.supabase import get_client as get_supabase
-from dotenv import load_dotenv
 
-# Deepfake module depends on TensorFlow / OpenCV. If either is unavailable
-# (e.g. broken TF install), we still want the rest of the API to work.
+# Deepfake module depends on OpenCV + (now) HuggingFace Inference API. If
+# anything is missing (e.g. cv2 not installed, no HF_API_TOKEN), keep the
+# rest of the API working and surface a clear error from /detect-deepfake.
 try:
     from models.deepfake_detection_engine import (
         load_model as load_deepfake_model,
@@ -27,7 +32,6 @@ except Exception as _e:  # noqa: BLE001
     _DEEPFAKE_IMPORT_ERROR = _e
     print(f"[Deepfake] Module disabled: {type(_e).__name__}: {_e}")
 
-load_dotenv()
 ETHERSCAN_API_KEY = os.getenv("MY_KEY")
 
 # ── Request schemas ──────────────────────────────────────────────────────────
