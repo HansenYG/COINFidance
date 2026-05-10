@@ -1,0 +1,3 @@
+Use:
+opencv-python-headless
+numpy
