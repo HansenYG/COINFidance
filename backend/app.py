@@ -121,7 +121,10 @@ def health():
         "models_loaded": {
             "wallet": True,
             "coin": True,
-            "deepfake": deepfake_model is not None,
+            # Deepfake model is initialized lazily on first request, so report
+            # "available" if the module imported cleanly (cv2/onnxruntime/etc).
+            "deepfake": load_deepfake_model is not None,
+            "deepfake_loaded": deepfake_model is not None,
         },
         "supabase": {"ok": False, "error": None},
         "etherscan": {"ok": False, "error": None},
@@ -205,17 +208,28 @@ if os.path.exists(coin_model_path):
     coin_model.load_state_dict(torch.load(coin_model_path, map_location="cpu"))
 coin_model.eval()
 
-# ── Load deepfake model ─────────────────────────────────────────────────────
+# ── Deepfake model is loaded LAZILY on the first /detect-deepfake call ──────
+# Startup stays fast even on Render free tier where the ~89MB ONNX model can
+# take a while to download, and a network blip during boot won't kill the
+# whole API. Subsequent calls reuse the cached instance.
 
-if load_deepfake_model is not None:
+deepfake_model = None  # populated by _get_deepfake_model() on first request
+
+
+def _get_deepfake_model():
+    """Return the deepfake detector, initializing it on first call."""
+    global deepfake_model, _DEEPFAKE_IMPORT_ERROR
+    if deepfake_model is not None:
+        return deepfake_model
+    if load_deepfake_model is None:
+        return None
     try:
         deepfake_model = load_deepfake_model()
+        return deepfake_model
     except Exception as _e:  # noqa: BLE001
         print(f"[Deepfake] load_model failed: {type(_e).__name__}: {_e}")
-        deepfake_model = None
         _DEEPFAKE_IMPORT_ERROR = _e
-else:
-    deepfake_model = None
+        return None
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -833,14 +847,27 @@ ALLOWED_EXTENSIONS = {
 
 @app.post("/detect-deepfake")
 async def detect_deepfake(file: UploadFile = File(...)):
-    if deepfake_model is None or predict_media is None:
+    if predict_media is None:
         raise HTTPException(
             status_code=503,
             detail=(
                 "Deepfake detection is unavailable on this server. "
                 f"Reason: {type(_DEEPFAKE_IMPORT_ERROR).__name__}: {_DEEPFAKE_IMPORT_ERROR}"
                 if _DEEPFAKE_IMPORT_ERROR
-                else "Deepfake model not loaded."
+                else "Deepfake module not installed."
+            ),
+        )
+
+    # Lazy-init: downloads the ONNX model on first call (~89 MB from HF).
+    model = _get_deepfake_model()
+    if model is None:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "Deepfake detection failed to initialize. "
+                f"Reason: {type(_DEEPFAKE_IMPORT_ERROR).__name__}: {_DEEPFAKE_IMPORT_ERROR}"
+                if _DEEPFAKE_IMPORT_ERROR
+                else "Deepfake model could not be loaded."
             ),
         )
 
@@ -859,7 +886,7 @@ async def detect_deepfake(file: UploadFile = File(...)):
             content = await file.read()
             f.write(content)
 
-        result = predict_media(deepfake_model, tmp_path)
+        result = predict_media(model, tmp_path)
         return result
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
